@@ -10,10 +10,14 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 # Your Telegram bot token from BotFather
-TOKEN = os.getenv("ttoken")
+TOKEN = '5656224031:AAFbrfFtK5QwSATE-bBtflCU7lg7M1gviwQ'
 sticker_id = "CAACAgUAAxkBAAETZyJiaC5D_9ue30Ae6sHQ1SogU5s7fgACGQEAAqP7yVR9wpCHJCufxiQE"
 # Dictionary to store the day book data with datetime keys
 date_party_dict = {}
+if not os.path.exists("bills.txt"):
+    # If the file doesn't exist, create it
+    with open("bills.txt", 'w') as file_f:
+        file_f.write("-1" + '\n')
 
 # Get today's date in Indian Standard Time (IST)
 indian_timezone = pytz.timezone('Asia/Kolkata')
