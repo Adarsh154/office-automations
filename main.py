@@ -10,7 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 # Your Telegram bot token from BotFather
-TOKEN = '5656224031:AAFbrfFtK5QwSATE-bBtflCU7lg7M1gviwQ'
+TOKEN = os.getenv("ttoken")
 sticker_id = "CAACAgUAAxkBAAETZyJiaC5D_9ue30Ae6sHQ1SogU5s7fgACGQEAAqP7yVR9wpCHJCufxiQE"
 # Dictionary to store the day book data with datetime keys
 date_party_dict = {}
@@ -115,6 +115,25 @@ def reply(update: Update, context: CallbackContext):
             except ValueError:
                 update.message.reply_text(i + "is not a valid bill no")
         process_daybook(update, context)
+    elif split_data[0] == "Undo":
+        for i in split_data[1:]:
+            try:
+                bill_no = int(i)
+                file_path = 'bills.txt'
+                with open(file_path, 'r') as file:
+                    # Read all lines from the file
+                    lines = file.readlines()
+                read_numbers = [int(line.strip()) for line in lines]
+                if bill_no not in read_numbers:
+                    update.message.reply_text(i + " is not present")
+                else:
+                    with open(file_path, 'w') as file:
+                        for line in lines:
+                            if line.strip() != i:
+                                file.write(line)
+            except ValueError:
+                update.message.reply_text(i + "is not a valid bill no")
+        process_daybook(update, context)
     else:
         url = "https://api.telegram.org/bot{}/sendSticker?chat_id={}&sticker={}".format(
             TOKEN, update.message.chat.id, sticker_id)
@@ -161,7 +180,7 @@ def main():
         Filters.command, unknown))
     updater.start_polling()
     scheduler = BackgroundScheduler(timezone=pytz.timezone('Asia/Kolkata'))
-    scheduler.add_job(process_daybook, CronTrigger(hour=16, minute=31, second=0), id='daily_update', args=[None, None])
+    scheduler.add_job(process_daybook, CronTrigger(hour=9, minute=0, second=0), id='daily_update', args=[None, None])
     scheduler.start()
     updater.idle()
 
