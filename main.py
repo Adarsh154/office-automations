@@ -19,10 +19,6 @@ if not os.path.exists("bills.txt"):
     with open("bills.txt", 'w') as file_f:
         file_f.write("-1" + '\n')
 
-# Get today's date in Indian Standard Time (IST)
-indian_timezone = pytz.timezone('Asia/Kolkata')
-today_date_ist = datetime.now(indian_timezone).date()
-
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi! I am your DayBook Bot. Send me your DayBook.xlsx file.')
@@ -37,6 +33,9 @@ def handle_daybook(update: Update, context: CallbackContext) -> None:
 
 def process_daybook(update: Update, context: CallbackContext) -> None:
     global date_party_dict
+    # Get today's date in Indian Standard Time (IST)
+    indian_timezone = pytz.timezone('Asia/Kolkata')
+    today_date_ist = datetime.now(indian_timezone).date()
 
     # Load the Excel workbook
     excel_file_path = 'DayBook.xlsx'
@@ -60,7 +59,7 @@ def process_daybook(update: Update, context: CallbackContext) -> None:
     # Process the day book data starting from row 8
     for row in sheet.iter_rows(min_row=8, values_only=True):
         original_date = row[0]
-        new_date = original_date + timedelta(days=15)
+        new_date = original_date + timedelta(days=14)
 
         new_date = new_date.date()
         if new_date <= today_date_ist:
@@ -88,7 +87,7 @@ def process_daybook(update: Update, context: CallbackContext) -> None:
     url = "https://api.telegram.org/bot{}/sendMessage?chat_id=781472777&text" \
           "={}".format(TOKEN, f"Data updated for {formatted_today_date}")
     requests.get(url)
-    send_report(update, context)
+    send_report(update, context, today_date_ist)
 
 
 def reply(update: Update, context: CallbackContext):
@@ -140,7 +139,7 @@ def reply(update: Update, context: CallbackContext):
         _ = requests.get(url)
 
 
-def send_report(update: Update, context: CallbackContext):
+def send_report(update: Update, context: CallbackContext, today_date_ist):
     chat_id = 781472777
     formatted_today_date = today_date_ist.strftime("%d-%b-%y")
     if date_party_dict:
@@ -180,7 +179,7 @@ def main():
         Filters.command, unknown))
     updater.start_polling()
     scheduler = BackgroundScheduler(timezone=pytz.timezone('Asia/Kolkata'))
-    scheduler.add_job(process_daybook, CronTrigger(hour=9, minute=0, second=0), id='daily_update', args=[None, None])
+    scheduler.add_job(process_daybook, CronTrigger(hour=0, minute=20, second=0), id='daily_update', args=[None, None])
     scheduler.start()
     updater.idle()
 
