@@ -1,13 +1,14 @@
+import json
 import os
+from datetime import datetime, timedelta
 
-import requests
-from telegram import Update
-from telegram.ext import Updater, Filters, CommandHandler, MessageHandler, CallbackContext
-from openpyxl import load_workbook
-from datetime import datetime, timedelta, time
 import pytz
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from openpyxl import load_workbook
+from telegram import Update
+from telegram.ext import Updater, Filters, CommandHandler, MessageHandler, CallbackContext
 
 # Your Telegram bot token from BotFather
 TOKEN = os.getenv("ttoken")
@@ -65,8 +66,10 @@ def process_daybook(update: Update, context: CallbackContext) -> None:
         if new_date <= today_date_ist:
             # Append party name to the list in the dictionary
             if int(row[3]) not in read_numbers and [
-                row[0].strftime("%d-%b-%y"), row[1], row[3], row[4]] not in date_party_dict.get(new_date, []):
-                date_party_dict.setdefault(new_date, []).append([row[0].strftime("%d-%b-%y"), row[1], row[3], row[4]])
+                row[0].strftime("%d-%b-%y"), row[1][:row[1].find("Rane")], row[3], row[4]] not in date_party_dict.get(
+                new_date, []):
+                date_party_dict.setdefault(new_date, []).append(
+                    [row[0].strftime("%d-%b-%y"), row[1][:row[1].find("Rane")], row[3], row[4]])
 
     # Clean up old data
     for date, values in list(date_party_dict.items()):
@@ -143,10 +146,19 @@ def send_report(update: Update, context: CallbackContext, today_date_ist):
     chat_id = 781472777
     formatted_today_date = today_date_ist.strftime("%d-%b-%y")
     if date_party_dict:
+        total = {}
         report = ""
         for k, v in date_party_dict.items():
             report += k.strftime("%d-%b-%y ") + str(v)
             report += "\n\n"
+        report += "\n\n"
+        for v in date_party_dict.values():
+            for i in v:
+                if i[1] in total:
+                    total[i[1]] += i[-1]
+                else:
+                    total[i[1]] = i[-1]
+        report += json.dumps(total, indent=2)
         if context:
             context.bot.send_message(chat_id, report)
         else:
