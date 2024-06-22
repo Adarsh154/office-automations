@@ -1,16 +1,17 @@
+import urllib.parse
 from datetime import datetime, timedelta
-import pytz
+
 import gspread
+import pytz
 import requests
 from oauth2client.service_account import ServiceAccountCredentials
-import urllib.parse
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 TOKEN = "Token_here"
 # add credentials to the account
 creds = ServiceAccountCredentials.from_json_keyfile_name('storied-fuze-274909-4eea10b19681.json', scope)
 
-# authorize the clientsheet
+# authorize the client sheet
 client = gspread.authorize(creds)
 # get the instance of the Spreadsheet
 sheet = client.open('Market Payment')
@@ -41,15 +42,16 @@ end_of_week = start_of_week + timedelta(days=6)
 # Filter payments due in the current week
 due_payments = []
 for payment in data:
-    due_date = parse_date(payment[-1])
-    if start_of_week <= due_date <= end_of_week:
+    due_date = parse_date(payment[5])
+    if start_of_week.date() <= due_date.date() <= end_of_week.date() and payment[-2].lower().strip() not in (
+            "yes", "y"):
         due_payments.append(payment)
 
 party_wise_payments = {}
 total_amount = 0
 for payment in due_payments:
     party = payment[1]
-    amount = payment[-2]
+    amount = payment[4]
     if party not in party_wise_payments:
         party_wise_payments[party] = []
     party_wise_payments[party].append(payment)
@@ -59,10 +61,10 @@ for payment in due_payments:
 text = "Payments party-wise:\n"
 for party, payments in party_wise_payments.items():
     text += f"Party: {party}\n"
-    party_total = sum(int(payment[-2]) for payment in payments)
+    party_total = sum(int(payment[4]) for payment in payments)
     for payment in payments:
         readable_list = [payment[0]]
-        readable_list.extend(payment[2:-1])
+        readable_list.extend(payment[2:5])
         text += ', '.join(readable_list)
         text += "\n"
     text += f"Total amount for {party}: {party_total}\n\n"
